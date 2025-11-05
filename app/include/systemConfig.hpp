@@ -1,8 +1,9 @@
 #pragma once
+
 #include <locale>
 #include <iostream>
 
-class systemConfig{
+class SystemConfig{
     public:
         static void setUTF8Locale() {
             try{
@@ -23,5 +24,4 @@ class systemConfig{
                 std::cerr << "Failed to set UTF-8 locale:" << e.what() << '\n';
             }
         }
-    
 };
