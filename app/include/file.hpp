@@ -2,15 +2,20 @@
 
 #include <iostream>
 #include <string>
+#include <cstdint>
+
+#include "filename.hpp"
 
 using namespace std;
 
 class File {
     public:
-        File(const string &name, const size_t size);
+        File(const string &filename);
+        File(const string &filename, const uintmax_t size);
+
     private:
-        string name;
-        size_t size;
+        Filename filename;
+        uintmax_t size;
         string create_date;
         string last_modified_date;
         string absolute_path;

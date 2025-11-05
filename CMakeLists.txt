@@ -6,11 +6,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # .exe
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
+# Collect sources from the app directory
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
+    app/*.cpp
+    app/src/*.cpp
+)
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Includes
-target_include_directories(${PROJECT_NAME} PRIVATE include)
+target_include_directories(${PROJECT_NAME} PRIVATE app/include)
 
 # Set .exe
 set_target_properties(${PROJECT_NAME} PROPERTIES

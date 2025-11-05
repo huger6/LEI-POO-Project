@@ -4,12 +4,14 @@
 #include <string>
 #include <list>
 
+#include "folder.hpp"
 
 using namespace std;
 
 class FileSystem {
     public:
         FileSystem();
+        FileSystem(const string &path);
         ~FileSystem();
         
         bool load(const string &path);
@@ -43,4 +45,6 @@ class FileSystem {
         // Others
         bool checkDupFiles();
         void tree(const string *file);
+    private:
+        unique_ptr<Folder> root;
 };
