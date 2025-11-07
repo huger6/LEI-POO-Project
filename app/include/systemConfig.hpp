@@ -3,25 +3,23 @@
 #include <locale>
 #include <iostream>
 
-class SystemConfig{
+#ifdef _WIN32
+    #include <windows.h> // using namespace std gives compilation error (DO NOT USE on .hpp files)
+#endif
+#include <locale.h>
+
+class SystemConfig {
     public:
-        static void setUTF8Locale() {
-            try{
-                std::locale utf8Locale("en_US.UTF-8");
-                std::locale::global (utf8Locale);
-                std::wcout.imbue(utf8Locale);
-                std::wcin.imbue(utf8Locale);
-                std::wclog.imbue(utf8Locale);
-
-
-                #ifdef _WIN32
-                    system("chcp 65001 > nul");
-
-                #endif
-                    std::wcout << L"Locale sucessfully set to UTF-8.\n";
-            }
-            catch(const std::runtime_error& e) {
-                std::cerr << "Failed to set UTF-8 locale:" << e.what() << '\n';
-            }
+        static void setUTF8() {
+            #ifdef _WIN32
+                // SetConsoleOutputCP returns 0 if there's an error
+                if ((SetConsoleOutputCP(CP_UTF8) == 0)||(SetConsoleCP(CP_UTF8) == 0)) {
+                    std::cout << "Ocorreu um erro ao configurar o terminal do Windows para UTF-8." << std::endl;
+                    std::cout << "A aplicação irá continuar. Desformatação será visível. Para resolver, reinicie a aplicação." << std::endl;
+                }
+                setlocale(LC_NUMERIC, "Portuguese"); // Floats now use ',' instead of '.'
+            #else
+                setlocale(LC_ALL, "pt_PT.UTF-8");
+            #endif
         }
 };

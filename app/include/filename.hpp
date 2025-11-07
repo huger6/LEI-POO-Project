@@ -3,18 +3,16 @@
 #include <iostream>
 #include <string>
 
-using namespace std;
-
 class Filename {
     public:
-        Filename(const string &fullname);
-        Filename(const string &name, const string &extention);
+        Filename(const std::string &fullname);
+        Filename(const std::string &name, const std::string &extention);
 
-        string getFullname() const;
+        std::string getFullname() const;
     protected:
-        string name;
-        string extension;
+        std::string name;
+        std::string extension;
     private:
-        string getExtension(const string& fullname);
-        string getName(const string& fullname);
+        std::string getExtension(const std::string& fullname);
+        std::string getName(const std::string& fullname);
 };

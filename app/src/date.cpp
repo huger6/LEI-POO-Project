@@ -1,6 +1,8 @@
 #include "date.hpp"
 #include "utils.hpp"
 
+using namespace std;
+
 Date::Date(uint16_t day, uint16_t month, uint16_t year) : day(day), month(month), year(year) {}
 
 Date::~Date() {}

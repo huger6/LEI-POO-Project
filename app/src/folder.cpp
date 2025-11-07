@@ -1,5 +1,7 @@
 #include "folder.hpp"
 
+using namespace std;
+
 Folder::Folder(string name, uintmax_t size = 0, Folder *father = nullptr) : name(name), size(size) {
     root = father;
 }
@@ -34,6 +36,56 @@ void Folder::addFile(unique_ptr<File> file) {
         
 void Folder::addFolder(unique_ptr<Folder> folder) {
     subfolders.push_back(move(folder));
+}
+
+void Folder::printFolder(ostream &out, ostream *mirror) {
+    for (const auto &sub : subfolders) {
+        sub->printFolder(out, mirror);
+    }
+    // Percorrer subfolders e para cada chamar printFolder
+    // caso haja ficheiros chamar o printFile
+}
+
+// void Folder::tree(uint16_t depth, ostream &out, ostream *mirror) const {
+//     string space(depth * SPACES_PER_LEVEL, ' ');
+//     string s(depth * SPACES_PER_LEVEL, ' ');
+
+//     s.append("|");
+//     s.append("----");
+//     out << s << this->getName() << endl;
+//     if (mirror) *mirror << s << this->getName() << endl;
+
+//     for (const unique_ptr<Folder>& sub : subfolders) {
+//         sub->tree(depth + 1, out, mirror);
+//     }
+
+//     for (const unique_ptr<File>& f : files) {
+//         out << s << space << f->getName() << endl;
+//         if (mirror) *mirror << s << space << f->getName() << endl;
+//     }
+// }
+
+void Folder::tree(const string &prefix, bool isLast, ostream &out, ostream *mirror) const {
+    // Connector and prefix
+    out << prefix << (isLast ? "└── " : "├── ") << getName() << endl;
+    if (mirror) *mirror << prefix << (isLast ? "└── " : "├── ") << getName() << endl;
+
+    // Next level prefix
+    string newPrefix = prefix + (isLast ? "    " : "│   ");
+
+    // SubFolders
+    for (size_t i = 0; i < subfolders.size(); ++i) {
+        bool lastSub = (i == subfolders.size() - 1 && files.empty());
+        subfolders[i]->tree(newPrefix, lastSub, out, mirror);
+    }
+
+    // Files
+    for (size_t i = 0; i < files.size(); ++i) {
+        bool lastFile = (i == files.size() - 1);
+        const auto &f = files[i];
+        out << newPrefix << (lastFile ? "└── " : "├── ") << f->getName() << endl;
+        if (mirror) *mirror << newPrefix << (lastFile ? "└── " : "├── ") << f->getName() << endl;
+    }
 }
 
 const string& Folder::getName() const { return name; }

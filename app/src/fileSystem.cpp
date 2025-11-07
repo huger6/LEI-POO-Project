@@ -2,6 +2,7 @@
 
 #include "fileSystem.hpp"
 
+using namespace std;
 namespace fs = std::filesystem;
 
 FileSystem::FileSystem() = default;
@@ -28,6 +29,6 @@ bool FileSystem::load(const string &path) {
     return root->load(dirPath);
 }
 
-void FileSystem::tree(const string *file = "tree.txt") {
-
+void FileSystem::tree(ostream &out, ostream *mirror) {
+    root->tree("", true, out, mirror);
 }

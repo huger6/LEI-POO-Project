@@ -6,17 +6,17 @@
 
 #include "filename.hpp"
 
-using namespace std;
-
 class File {
     public:
-        File(const string &filename);
-        File(const string &filename, const uintmax_t size);
+        File(const std::string &filename);
+        File(const std::string &filename, const std::uintmax_t size);
 
+        void printFile(std::ostream &out, std::ostream *mirror = nullptr);
+        const std::string getName() const;
     private:
         Filename filename;
-        uintmax_t size;
-        string create_date;
-        string last_modified_date;
-        string absolute_path;
+        std::uintmax_t size;
+        std::string create_date;
+        std::string last_modified_date;
+        std::string absolute_path;
 };

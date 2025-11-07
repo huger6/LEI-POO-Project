@@ -1,5 +1,7 @@
 #include "filename.hpp"
 
+using namespace std;
+
 Filename::Filename(const string &fullname) {
     name = getName(fullname);
     extension = getExtension(fullname);
