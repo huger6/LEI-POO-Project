@@ -6,6 +6,7 @@
 
 class Date {
     public:
+        Date();
         Date(uint16_t day, uint16_t month, uint16_t year);
         ~Date();
 

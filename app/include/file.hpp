@@ -5,18 +5,21 @@
 #include <cstdint>
 
 #include "filename.hpp"
+#include "date.hpp"
 
 class File {
     public:
         File(const std::string &filename);
         File(const std::string &filename, const std::uintmax_t size);
 
-        void printFile(std::ostream &out, std::ostream *mirror = nullptr);
+        void saveToXML(std::ostream &out, std::uint16_t indent) const;
+
+        // Getters
         const std::string getName() const;
+        std::uintmax_t getSize() const;
     private:
         Filename filename;
         std::uintmax_t size;
-        std::string create_date;
-        std::string last_modified_date;
-        std::string absolute_path;
+        Date createDate;
+        Date lastModifiedDate;
 };

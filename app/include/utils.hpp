@@ -9,4 +9,16 @@ struct Utils {
         if (s.length() < width) s = std::string(width - s.length(), '0') + s;
         return s;
     };  
+
+    static std::string extractAttribute(const std::string& line, const std::string& attr) {
+        std::string key = attr + "=\"";
+        size_t start = line.find(key);
+
+        if (start == std::string::npos) return "";
+
+        start += key.size();
+        size_t end = line.find('"', start);
+
+        return line.substr(start, end - start);
+    }
 };
