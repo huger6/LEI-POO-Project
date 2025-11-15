@@ -85,8 +85,36 @@ int main() {
         std::cout << it << std::endl;
     }
 
+    // Move file
+    if (fs.moveFile("Browser - Admin.pdf", "Grelhas")) {
+        std::cout << "Sucess changing file to Grelhas" << std::endl;
+        fs.tree(std::cout, nullptr);
+    }
+    else {
+        std::cout << "Failure changing file to Grelhas" << std::endl;
+    }
 
+    // Move folder
+    if (fs.moveFolder("Consultor", "Grelhas")) {
+        std::cout << "Sucess changing Consultor to Grelhas" << std::endl;
+        fs.tree(std::cout, nullptr);
+    }
+    else {
+        std::cout << "Failure changing Consultor to Grelhas" << std::endl;
+    }
 
+    // Remove all
+    bool remove1 = fs.removeAll("Consultor", ElementType::Folder);
+    std::cout << remove1 << std::endl;
+    fs.tree(std::cout, nullptr);
+
+    bool remove2 = fs.removeAll("logo-softinsa.svg", ElementType::File);
+    std::cout << remove2 << std::endl;
+    fs.tree(std::cout, nullptr);
+    
+    // Rename all files
+    fs.renameAllFiles("Browser - Admin.pdf", "I CHANGED THIS");
+    fs.tree(std::cout, nullptr);
 
     return 0;
 }

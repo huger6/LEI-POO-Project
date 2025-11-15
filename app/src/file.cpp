@@ -34,6 +34,17 @@ void File::saveToXML(ostream &out, uint16_t indent) const {
     out << space << "<File name=\"" << filename.getFullname() << "\" size=\"" << size << "\"/>\n";
 }
 
+// Setters
+
+/**
+ * @brief Change the name of the file
+ * 
+ * @param name New name
+ */
+void File::setName(const string &name) {
+    filename.setName(name);
+}
+
 // Getters
 
 /**

@@ -1,17 +1,20 @@
+/*
+
 #pragma once
 
-#include "fileSystem.hpp"
 #include <iostream>
 #include <string>
 
-class Menu{
+#include "fileSystem.hpp"
+
+class Menu {
     private:
     // Métodos de exibição de menus
         void displayMainMenu();
         void showFileSystemStats();
         void showSearchMenu();
 
-        // Métodos de ação (amostragem/carregamento)
+        // Métodos de ação (amostragem/carioregamento)
     void loadFileSystem();
     void showTree();
     void checkDuplicates();
@@ -29,14 +32,10 @@ class Menu{
     
     public:
 
-        /**
-         * @brief Construtor. Inicializa o menu.
-         */
+        
         Menu();
 
-        /**
-         * @brief Inicia o loop principal do menu.
-         */
+        
         void run();
 };
 
@@ -47,3 +46,5 @@ Menu::Menu()
 Menu::~Menu()
 {
 }
+
+*/

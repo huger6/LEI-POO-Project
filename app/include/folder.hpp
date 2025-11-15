@@ -26,6 +26,7 @@ class Folder {
         void addFile(std::unique_ptr<File> file);
         std::unique_ptr<File> removeFile(const std::string& name);
         void addFolder(std::unique_ptr<Folder> folder);
+        std::unique_ptr<Folder> removeFolder(const std::string& name);
         
         std::uint32_t countFiles() const;
         std::uint32_t countFolders() const;
@@ -47,10 +48,13 @@ class Folder {
 
         void tree(const std::string &prefix, bool isLast, std::ostream &out, std::ostream *mirror) const;
 
+        // Setters
+        void setParent(Folder *parent);
         // Getters
         Folder *getFolderByName(const std::string& name) const;
         File *getFileByName(const std::string& name) const;
         Folder *getFolderByFileName(const std::string& name) const;
+        Folder* getParent() const;
         const std::string& getName() const;
         const std::vector<std::unique_ptr<File>>& getFiles() const;
         const std::vector<std::unique_ptr<Folder>>& getSubfolders() const;

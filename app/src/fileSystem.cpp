@@ -250,7 +250,7 @@ bool FileSystem::readFromXML(const string &filename) {
     return true;
 }
 
-// Move operations
+// File operations
 
 /**
  * @brief Move a file to a new folder
@@ -278,6 +278,109 @@ bool FileSystem::moveFile(const std::string &file, const std::string &newFolder)
 
     dest->addFile(move(f));
     return true;
+}
+
+/**
+ * @brief Move a folder into another folder
+ * 
+ * @param oldDir Folder to me moved
+ * @param newDir Folder to move oldDir into
+ * @return true Success
+ * @return false Failure
+ */
+bool FileSystem::moveFolder(const std::string &oldDir, const std::string &newDir) {
+    // Find folder to be moved
+    Folder *oldF = root->getFolderByName(oldDir);
+    if (!oldF) return false;
+
+    // Find folder to move it into
+    Folder *newF = root->getFolderByName(newDir);
+    if (!newF) return false;
+
+    // Check if newDir is a subfolder of oldDir
+    if (oldF == newF || oldF->getFolderByName(newDir)) return false;
+
+    Folder *oldParent = oldF->getParent();
+    if (!oldParent) return false; // root must not be moved
+
+    // Get oldF unique_ptr
+    unique_ptr<Folder> f = oldParent->removeFolder(oldDir);
+    if (!f) return false;
+
+    // Add to newDir
+    newF->addFolder(move(f));
+    return true;
+}
+
+/**
+ * @brief Remove all occurences of a file or folder, determined by type
+ * 
+ * @param name Name of the folder/file to remove
+ * @param type What to remove (folder/file)
+ * @return true Success (element deleted successfully)
+ * @return false Failure (either the element didn't exist or failed to be deleted)
+ */
+bool FileSystem::removeAll(const std::string &name, ElementType type) {
+    if (name.empty()) return false;
+    if (!root) return false;
+
+    bool removedSomething = false;
+
+    if (type == ElementType::File) {
+        while (true) {
+            // Find file's parent
+            Folder *parent = root->getFolderByFileName(name);
+            if (!parent) break;
+            
+            // unique_ptr is destroyed automatically
+            unique_ptr<File> removed = parent->removeFile(name);
+            if (!removed) break;
+            removedSomething = true;
+        }
+        return removedSomething;
+    }
+    else if (type == ElementType::Folder) {
+        while (true) {
+            // Find folder to be deleted
+            Folder *oldF = root->getFolderByName(name);
+            if (!oldF) break;
+    
+            Folder *parent = oldF->getParent();
+            // Check if the folder being removed is the root
+            if (!parent) {
+                clear(); // reset filesystem
+                removedSomething = true;
+                break;
+            }
+            
+            // unique_ptr is destroyed automatically
+            unique_ptr<Folder> removed = parent->removeFolder(name);
+            if (!removed) break;
+            removedSomething = true;
+        }
+        return removedSomething;
+    }
+
+    return false;
+}
+
+/**
+ * @brief Rename all files to "newName"
+ * 
+ * @param currentName Current name to be changed
+ * @param newName New name WITHOUT EXTENSION
+ */
+void FileSystem::renameAllFiles(const string &currentName, const string &newName) {
+    if (currentName.empty() || newName.empty()) return;
+    if (currentName == newName) return;
+
+    while (true) {
+        // Find file's parent
+        File *f = root->getFileByName(currentName);
+        if (!f) break;
+
+        f->setName(newName);
+    }
 }
 
 // Search Operations

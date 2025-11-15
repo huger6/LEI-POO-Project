@@ -14,6 +14,8 @@ class File {
 
         void saveToXML(std::ostream &out, std::uint16_t indent) const;
 
+        // Setters
+        void setName(const std::string &name);
         // Getters
         const std::string getName() const;
         std::uintmax_t getSize() const;

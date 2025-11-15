@@ -52,6 +52,12 @@ void Folder::addFile(unique_ptr<File> file) {
     files.push_back(move(file));
 }
 
+/**
+ * @brief Removes a file from the current folder and returns its unique_ptr
+ * 
+ * @param name Name of the file to remove
+ * @return unique_ptr<File> File if found, else nullptr
+ */
 unique_ptr<File> Folder::removeFile(const string& name) {
     for (vector<unique_ptr<File>>::iterator it = files.begin(); it != files.end(); ++it) {
         if ((*it)->getName() == name) {
@@ -64,11 +70,31 @@ unique_ptr<File> Folder::removeFile(const string& name) {
 }
 
 /**
+ * @brief Removes a folder from the current folder (can be the folder itself) and returns its unique_ptr
+ * 
+ * @note This method is non recursive, as it only checks for direct children of the current folder
+ * 
+ * @param name Name of the folder to remove
+ * @return unique_ptr<Folder> Folder if found, else nullptr
+ */
+unique_ptr<Folder> Folder::removeFolder(const string& name) {
+    for (vector<unique_ptr<Folder>>::iterator it = subfolders.begin(); it != subfolders.end(); ++it) {
+        if ((*it)->getName() == name) {
+            unique_ptr<Folder> f = move(*it);
+            subfolders.erase(it);
+            return f;
+        }
+    }
+    return nullptr;
+}
+
+/**
  * @brief Add a subfolder to the folder
  * 
  * @param folder (sub)Folder to add
  */
 void Folder::addFolder(unique_ptr<Folder> folder) {
+    folder->setParent(this);
     subfolders.push_back(move(folder));
 }
 
@@ -399,6 +425,17 @@ void Folder::searchAllFiles(list<string> &li, const string& name, const string& 
     }
 }
 
+// Setters
+
+/**
+ * @brief Set the folder's parent folder
+ * 
+ * @param parent Pointer to the father
+ */
+void Folder::setParent(Folder *parent) {
+    root = parent;
+}
+
 // Getters
 
 /**
@@ -458,6 +495,8 @@ Folder *Folder::getFolderByFileName(const string& name) const {
     // Not found
     return nullptr;
 }
+
+Folder* Folder::getParent() const { return root; }
 
 /**
  * @brief Get the folder's name

@@ -35,6 +35,15 @@ void Filename::setExtension(const string &newExtension) {
 }
 
 /**
+ * @brief Update file's name
+ * 
+ * @param newName New name to give to the file
+ */
+void Filename::setName(const string &newName) {
+    name = newName;
+}
+
+/**
  * @brief Get the fullname of the file
  * 
  * @return string Name.extension
