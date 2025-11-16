@@ -1,5 +1,8 @@
 #include "folder.hpp"
 
+#include "date.hpp"
+#include "utils.hpp"
+
 using namespace std;
 
 /**
@@ -29,14 +32,18 @@ bool Folder::load(const fs::path& path) {
             unique_ptr<Folder> subfolder = make_unique<Folder>(entry.path().filename().string(), this);
             // Load subfolder's content
             if (subfolder->load(entry.path())) {
-                // cout << "Folder loaded: " << entry.path().filename().string() << endl;
                 // Add folder to its father folders list
                 addFolder(move(subfolder));
             }
         }
         else if (entry.is_regular_file()) {
-            addFile(make_unique<File>(entry.path().filename().string(), fs::file_size(entry.path())));
-            // cout << "File loaded: " << entry.path().filename().string() << endl;
+            Date date = Date::convertFileTime(fs::last_write_time(entry.path()));
+
+            addFile(make_unique<File>(
+                entry.path().filename().string(),
+                date,
+                fs::file_size(entry.path())
+            ));
         }
     }
 
@@ -49,6 +56,17 @@ bool Folder::load(const fs::path& path) {
  * @param file File to add
  */
 void Folder::addFile(unique_ptr<File> file) {
+    if (!file) return;
+
+    string name = file->getName().getFullname();
+
+    uint16_t counter = 1;
+
+    while (hasFile(name)) {
+        file->getName().generateSequentialName(counter);
+        counter++;
+    }
+
     files.push_back(move(file));
 }
 
@@ -60,7 +78,7 @@ void Folder::addFile(unique_ptr<File> file) {
  */
 unique_ptr<File> Folder::removeFile(const string& name) {
     for (vector<unique_ptr<File>>::iterator it = files.begin(); it != files.end(); ++it) {
-        if ((*it)->getName() == name) {
+        if ((*it)->getName().getFullname() == name) {
             unique_ptr<File> file = move(*it);
             files.erase(it);
             return file;
@@ -99,6 +117,41 @@ void Folder::addFolder(unique_ptr<Folder> folder) {
 }
 
 /**
+ * @brief 
+ * 
+ * @param pattern Pattern to find in the name of the file
+ * @param destin Destination folder 
+ * @return true Copy was successfull
+ * @return false No file matching the pattern was found or the copy of the files found was not successful
+ */
+bool Folder::copyBatch(const string &pattern, Folder *destin) {
+    bool copied = false;
+    // Search in this folder's files
+    for (const unique_ptr<File> &f : files) {
+        if (Utils::hasPattern(f->getName().getFullname(), pattern)) {
+            string cName = f->getName().getFullname();
+            Date cDate = f->getDate();
+            uintmax_t cSize = f->getSize();
+
+            unique_ptr<File> copy = make_unique<File>(cName, cDate, cSize);
+            if (!copy) continue;
+
+            destin->addFile(move(copy));
+            copied = true;
+        }
+    }
+
+    // Check subfolders
+    for (const unique_ptr<Folder> &sub : subfolders) {
+        if (sub->copyBatch(pattern, destin)) {
+            copied = true;
+        }
+    }
+
+    return copied;
+}
+
+/**
  * @brief Get number of files
  * 
  * @return uint32_t Number of files
@@ -128,6 +181,35 @@ uint32_t Folder::countFolders() const {
 }
 
 /**
+ * @brief Check for duplicate files in this folder
+ * 
+ * @param names Names found so far
+ * @return true There's duplicates
+ * @return false There's no duplicates
+ */
+bool Folder::checkDupFiles(unordered_set<string>& names) {
+    // Check this folder
+    for (const unique_ptr<File>& f : files) {
+        const string& name = f->getName().getFullname();
+
+        // Check if name exists in names
+        if (!names.insert(name).second) {
+            return true;
+        }
+        // Note: names.insert(name) already inserts the name on the uset unless !.second (returns false if already existed)
+    }
+
+    // Subfolders
+    for (const unique_ptr<Folder>& sub : subfolders) {
+        if (sub->checkDupFiles(names)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
  * @brief Output Windows like tree command for the current folder
  * 
  * @param prefix Prefix to the output string
@@ -153,8 +235,8 @@ void Folder::tree(const string &prefix, bool isLast, ostream &out, ostream *mirr
     for (size_t i = 0; i < files.size(); ++i) {
         bool lastFile = (i == files.size() - 1);
         const auto &f = files[i];
-        out << newPrefix << (lastFile ? "└── " : "├── ") << f->getName() << endl;
-        if (mirror) *mirror << newPrefix << (lastFile ? "└── " : "├── ") << f->getName() << endl;
+        out << newPrefix << (lastFile ? "└── " : "├── ") << f->getName().getFullname() << endl;
+        if (mirror) *mirror << newPrefix << (lastFile ? "└── " : "├── ") << f->getName().getFullname() << endl;
     }
 }
 
@@ -290,9 +372,9 @@ void Folder::saveToXML(xml::XMLDocument &doc, xml::XMLElement *parentElem) const
     // Write all files
     for (const unique_ptr<File> &f : files) {
         xml::XMLElement *fileElem = doc.NewElement("File");
-        fileElem->SetAttribute("name", f->getName().c_str());
+        fileElem->SetAttribute("name", f->getName().getFullname().c_str());
         fileElem->SetAttribute("size", static_cast<unsigned long long>(f->getSize()));
-        // fileElem->SetAttribute("date", f->getDate().c_str());
+        fileElem->SetAttribute("date", f->getDate().getFormattedDate().c_str());
         dirElem->InsertEndChild(fileElem);
     }
 
@@ -321,8 +403,10 @@ void Folder::readFromXML(xml::XMLElement *dirElem) {
 
         fileElem->QueryUnsigned64Attribute("size", &size);
 
+        const char* dateStr = fileElem->Attribute("date");
+
         // Create file
-        files.push_back(make_unique<File>(fname ? fname : "Unnamed", size));
+        files.push_back(make_unique<File>(fname ? fname : "Unnamed", dateStr, size));
     }
 
     // Load all subdirectories
@@ -388,7 +472,7 @@ void Folder::searchAllFolders(list<string> &li, const string& name, const string
 string Folder::searchFile(const string& name) const {
     // Files
     for (const unique_ptr<File>& f : files) {
-        if (f->getName() == name) return this->getName() + "/" + f->getName();
+        if (f->getName().getFullname() == name) return this->getName() + "/" + f->getName().getFullname();
     }
 
     // Subfolders
@@ -414,7 +498,7 @@ void Folder::searchAllFiles(list<string> &li, const string& name, const string& 
 
     // Check if this folder matches
     for (const unique_ptr<File>& f : files) {
-        if (f->getName() == name) {
+        if (f->getName().getFullname() == name) {
             li.push_back(currentPath + "/" + name);
         }
     }
@@ -423,6 +507,22 @@ void Folder::searchAllFiles(list<string> &li, const string& name, const string& 
     for (const unique_ptr<Folder>& sub : subfolders) {
         sub->searchAllFiles(li, name, currentPath);
     }
+}
+
+
+/**
+ * @brief Check if there a file in this folder (does not check subfolders)
+ * 
+ * @param name Name to search for
+ * @return true File exists
+ * @return false File does not exist
+ */
+bool Folder::hasFile(const std::string &name) const {
+    for (const unique_ptr<File>& f : files) {
+        if (f->getName().getFullname() == name)
+            return true;
+    }
+    return false;
 }
 
 // Setters
@@ -467,7 +567,7 @@ Folder *Folder::getFolderByName(const string& name) const {
 File *Folder::getFileByName(const string& name) const {
     // Files
     for (const unique_ptr<File>& f : files) {
-        if (f->getName() == name) return f.get();
+        if (f->getName().getFullname() == name) return f.get();
     }
 
     // Subfolders
@@ -480,10 +580,16 @@ File *Folder::getFileByName(const string& name) const {
     return nullptr;
 }
 
+/**
+ * @brief Get the parent folder of a file by its name
+ * 
+ * @param name Name of the file to search
+ * @return Folder* Folder if found, else nullptr
+ */
 Folder *Folder::getFolderByFileName(const string& name) const {
     // Files
     for (const unique_ptr<File>& f : files) {
-        if (f->getName() == name) return const_cast<Folder *>(this);
+        if (f->getName().getFullname() == name) return const_cast<Folder *>(this);
     }
 
     // Subfolders
@@ -496,6 +602,11 @@ Folder *Folder::getFolderByFileName(const string& name) const {
     return nullptr;
 }
 
+/**
+ * @brief Get the parent folder of the current folder
+ * 
+ * @return Folder* Folder
+ */
 Folder* Folder::getParent() const { return root; }
 
 /**

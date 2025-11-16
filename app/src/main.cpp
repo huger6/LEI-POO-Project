@@ -114,7 +114,20 @@ int main() {
     
     // Rename all files
     fs.renameAllFiles("Browser - Admin.pdf", "I CHANGED THIS");
+    fs.renameAllFiles("Tradução de requisitos funcionais em necessidades dos utilizadores - Hugo Afonso 30032.pdf", "I CHANGED THIS");
     fs.tree(std::cout, nullptr);
 
+    // Dups
+    std::cout << fs.checkDupFiles() << std::endl;
+
+    // Get file date
+    std::string *fDate = fs.getFileDate("Browser - Service Line.pdf");
+    std::cout << "File date: " << *fDate << std::endl;
+    delete fDate;
+
+    // Copy batch
+    std::cout << fs.copyBatch("sneakpeekit", "Grelhas", "PAF") << std::endl;
+    fs.tree(std::cout, nullptr);
+    
     return 0;
 }

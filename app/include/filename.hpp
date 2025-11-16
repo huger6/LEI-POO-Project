@@ -2,13 +2,14 @@
 
 #include <iostream>
 #include <string>
+#include <cstdint>
 
 class Filename {
     public:
         Filename(const std::string &fullname);
         Filename(const std::string &name, const std::string &extention);
 
-        
+        void generateSequentialName(std::uint16_t counter);
         // Setters
         void setExtension(const std::string &newExtension);
         void setName(const std::string &newName);

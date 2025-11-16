@@ -1,5 +1,7 @@
 #include "filename.hpp"
 
+#include <sstream>
+
 using namespace std;
 
 /**
@@ -23,6 +25,19 @@ Filename::Filename(const string &name, const string &extension)
         // Possible extension and name validations here
         // Throw exception if invalid
         // Caller must catch the exception
+}
+
+/**
+ * @brief Change the name of the file to deal with duplicate names
+ * 
+ * @param counter Number of the copy
+ */
+void Filename::generateSequentialName(uint16_t counter) {
+    ostringstream oss;
+    oss << " (" << counter << ")";
+
+    // Acrescentar ao nome
+    name = name + oss.str();
 }
 
 /**

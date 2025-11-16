@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <cstdint>
 #include <list>
+#include <unordered_set>
 // tinyxml2 library
 #include "tinyxml2.h"
 
@@ -27,6 +28,8 @@ class Folder {
         std::unique_ptr<File> removeFile(const std::string& name);
         void addFolder(std::unique_ptr<Folder> folder);
         std::unique_ptr<Folder> removeFolder(const std::string& name);
+
+        bool copyBatch(const std::string &pattern, Folder *destin);
         
         std::uint32_t countFiles() const;
         std::uint32_t countFolders() const;
@@ -39,15 +42,16 @@ class Folder {
 
         void saveToXML(xml::XMLDocument &doc, xml::XMLElement *parentElem) const;
         void readFromXML(xml::XMLElement *dirElem);
-        // read
 
         std::string searchFolder(const std::string& name) const;
         void searchAllFolders(std::list<std::string> &li, const std::string& name, const std::string& path) const;
         std::string searchFile(const std::string& name) const;
         void searchAllFiles(std::list<std::string> &li, const std::string& name, const std::string& path) const;
 
+        bool checkDupFiles(std::unordered_set<std::string>& names);
         void tree(const std::string &prefix, bool isLast, std::ostream &out, std::ostream *mirror) const;
 
+        bool hasFile(const std::string &name) const;
         // Setters
         void setParent(Folder *parent);
         // Getters

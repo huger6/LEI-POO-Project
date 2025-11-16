@@ -10,18 +10,18 @@
 class File {
     public:
         File(const std::string &filename);
-        File(const std::string &filename, const std::uintmax_t size);
-
-        void saveToXML(std::ostream &out, std::uint16_t indent) const;
+        File(const std::string &filename, Date date, const std::uintmax_t size);
+        File(const std::string &filename, const std::string &date, const std::uintmax_t size);
 
         // Setters
         void setName(const std::string &name);
         // Getters
-        const std::string getName() const;
+        const Filename getName() const;
+        Filename& getName();
         std::uintmax_t getSize() const;
+        const Date getDate() const;
     private:
         Filename filename;
         std::uintmax_t size;
-        Date createDate;
-        Date lastModifiedDate;
+        Date date;
 };

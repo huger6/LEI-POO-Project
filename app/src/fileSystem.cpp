@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <fstream>
+#include <unordered_set>
 // tinyxml2 library
 #include "tinyxml2.h"
 
@@ -62,7 +63,7 @@ bool FileSystem::load() {
  * @return true Loading succeeded
  * @return false Loading failed
  */
-bool FileSystem::load(const std::string &rootPath) {
+bool FileSystem::load(const string &rootPath) {
     fs::path dirPath = rootPath;
 
     if (!fs::exists(dirPath) || !fs::is_directory(dirPath)) {
@@ -141,11 +142,11 @@ string *FileSystem::leastElementsFolder() const {
  * 
  * @return std::string* Name of the file, nullptr if error
  */
-std::string *FileSystem::largestFile() const {
+string *FileSystem::largestFile() const {
     if (!root) return nullptr;
 
     const File *f = root->largestFile();
-    return new string(f->getName());
+    return new string(f->getName().getFullname());
 }
 
 /**
@@ -153,7 +154,7 @@ std::string *FileSystem::largestFile() const {
  * 
  * @return std::string* Name of the folder, nullptr if error
  */
-std::string *FileSystem::largestFolder() const {
+string *FileSystem::largestFolder() const {
     if (!root) return nullptr;
 
     const Folder *f = root->largestFolder();
@@ -167,7 +168,7 @@ std::string *FileSystem::largestFolder() const {
  * 
  * @param filename Name of the file (with or without extension)
  */
-void FileSystem::saveToXML(const std::string &filename) const {
+void FileSystem::saveToXML(const string &filename) const {
     if (!root) {
         cerr << "There is no data to be saved" << endl;
         return;
@@ -260,7 +261,7 @@ bool FileSystem::readFromXML(const string &filename) {
  * @return true Sucess moving the file
  * @return false Failed to move the file
  */
-bool FileSystem::moveFile(const std::string &file, const std::string &newFolder) {
+bool FileSystem::moveFile(const string &file, const string &newFolder) {
     // Find file's parent
     Folder *parent = root->getFolderByFileName(file);
     if (!parent) return false;
@@ -288,7 +289,7 @@ bool FileSystem::moveFile(const std::string &file, const std::string &newFolder)
  * @return true Success
  * @return false Failure
  */
-bool FileSystem::moveFolder(const std::string &oldDir, const std::string &newDir) {
+bool FileSystem::moveFolder(const string &oldDir, const string &newDir) {
     // Find folder to be moved
     Folder *oldF = root->getFolderByName(oldDir);
     if (!oldF) return false;
@@ -313,6 +314,27 @@ bool FileSystem::moveFolder(const std::string &oldDir, const std::string &newDir
 }
 
 /**
+ * @brief Copy 
+ * 
+ * @param pattern Pattern to find in 
+ * @param originDir 
+ * @param destinDir 
+ * @return true 
+ * @return false 
+ */
+bool FileSystem::copyBatch(const string &pattern, const string &originDir, const string &destinDir) {
+    // Find origin folder
+    Folder *origin = root->getFolderByName(originDir);
+    if (!origin) return false;
+
+    // Find destination folder
+    Folder *destin = root->getFolderByName(destinDir);
+    if (!destin) return false;
+
+    return origin->copyBatch(pattern, destin);
+}
+
+/**
  * @brief Remove all occurences of a file or folder, determined by type
  * 
  * @param name Name of the folder/file to remove
@@ -320,7 +342,7 @@ bool FileSystem::moveFolder(const std::string &oldDir, const std::string &newDir
  * @return true Success (element deleted successfully)
  * @return false Failure (either the element didn't exist or failed to be deleted)
  */
-bool FileSystem::removeAll(const std::string &name, ElementType type) {
+bool FileSystem::removeAll(const string &name, ElementType type) {
     if (name.empty()) return false;
     if (!root) return false;
 
@@ -383,6 +405,23 @@ void FileSystem::renameAllFiles(const string &currentName, const string &newName
     }
 }
 
+/**
+ * @brief Get a file's date as a string
+ * 
+ * @note Caller must delete return value
+ * 
+ * @param name Name of the file to search for
+ * @return string* Date formatted if found, else nullptr
+ */
+string *FileSystem::getFileDate(const string &name) {
+    if (name.empty()) return nullptr;
+
+    File *f = root->getFileByName(name);
+    if (!f) return nullptr;
+
+    return new string(f->getDate().getFormattedDate());
+}
+
 // Search Operations
 
 /**
@@ -442,6 +481,17 @@ void FileSystem::searchAllFiles(list<string> &li, const string &file) const {
 // Others
 
 /**
+ * @brief Check if there are any files with the same name on the system
+ * 
+ * @return true There's duplicate files
+ * @return false There's no duplicate files
+ */
+bool FileSystem::checkDupFiles() {
+    unordered_set<string> names;
+    return root->checkDupFiles(names);
+}
+
+/**
  * @brief Output Windows like tree command
  * 
  * @param out Where to show the tree
@@ -470,3 +520,4 @@ void FileSystem::setPath(const string& newPath) {
  * @return const string& Path
  */
 const string& FileSystem::getPath() const { return path; }
+

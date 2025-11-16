@@ -16,22 +16,21 @@ File::File(const string &filename) : filename(Filename(filename)) {
  * 
  * @param filename Name of the file with extension
  * @param size Size occupied by the file
+ * @param date Last modified date
  */
-File::File(const string &filename, const uintmax_t size = 0) : filename(Filename(filename)), size(size) {
+File::File(const string &filename, Date date, const uintmax_t size = 0) : filename(Filename(filename)), size(size), date(date) {
 
 }
 
-// XML
-
 /**
- * @brief Save file's content to XML format
+ * @brief Construct a new File:: File object
  * 
- * @param out Write-to file
- * @param indent Level of indentation
+ * @param filename Name of the file with extension
+ * @param size Size occupied by the file
+ * @param date Last modified date in string format (day/month/year)
  */
-void File::saveToXML(ostream &out, uint16_t indent) const {
-    std::string space(indent, '\t');
-    out << space << "<File name=\"" << filename.getFullname() << "\" size=\"" << size << "\"/>\n";
+File::File(const string &filename, const string &date, const uintmax_t size) : filename(Filename(filename)), size(size), date(date) {
+    
 }
 
 // Setters
@@ -43,6 +42,7 @@ void File::saveToXML(ostream &out, uint16_t indent) const {
  */
 void File::setName(const string &name) {
     filename.setName(name);
+    // TODO: Update date
 }
 
 // Getters
@@ -52,7 +52,14 @@ void File::setName(const string &name) {
  * 
  * @return const string Name.extension
  */
-const string File::getName() const { return filename.getFullname(); }
+const Filename File::getName() const { return filename; }
+
+/**
+ * @brief Get filename and allow changes
+ * 
+ * @return Filename& Filename
+ */
+Filename& File::getName() { return filename; }
 
 /**
  * @brief Get the size occupied by the file
@@ -60,3 +67,11 @@ const string File::getName() const { return filename.getFullname(); }
  * @return uintmax_t Size
  */
 uintmax_t File::getSize() const { return size; }
+
+/**
+ * @brief Get the name formatted as a string
+ * 
+ * @return const string Date
+ */
+const Date File::getDate() const { return date; }
+

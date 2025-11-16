@@ -21,4 +21,8 @@ struct Utils {
 
         return line.substr(start, end - start);
     }
+
+    static bool hasPattern(const std::string &name, const std::string &pattern) {
+        return name.find(pattern) != std::string::npos;
+    }
 };
