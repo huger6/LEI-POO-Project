@@ -13,6 +13,7 @@ class Date {
         ~Date();
 
         static Date convertFileTime(const std::filesystem::file_time_type &ftime);
+        static Date now();
 
         std::string getFormattedDate() const;
         std::uint16_t getDay() const;

@@ -1,6 +1,8 @@
 #include "file.hpp"
 
+
 using namespace std;
+
 
 /**
  * @brief Construct a new File:: File object
@@ -42,7 +44,17 @@ File::File(const string &filename, const string &date, const uintmax_t size) : f
  */
 void File::setName(const string &name) {
     filename.setName(name);
-    // TODO: Update date
+    // Update date
+    setDate(Date::now());
+}
+
+/**
+ * @brief Change the date of the file
+ * 
+ * @param newDate New date
+ */
+void File::setDate(const Date &newDate) {
+    date = newDate;
 }
 
 // Getters

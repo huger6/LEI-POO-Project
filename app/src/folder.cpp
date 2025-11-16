@@ -3,7 +3,9 @@
 #include "date.hpp"
 #include "utils.hpp"
 
+
 using namespace std;
+
 
 /**
  * @brief Construct a new Folder:: Folder object
@@ -112,6 +114,8 @@ unique_ptr<Folder> Folder::removeFolder(const string& name) {
  * @param folder (sub)Folder to add
  */
 void Folder::addFolder(unique_ptr<Folder> folder) {
+    if (!folder) return;
+
     folder->setParent(this);
     subfolders.push_back(move(folder));
 }
@@ -130,7 +134,7 @@ bool Folder::copyBatch(const string &pattern, Folder *destin) {
     for (const unique_ptr<File> &f : files) {
         if (Utils::hasPattern(f->getName().getFullname(), pattern)) {
             string cName = f->getName().getFullname();
-            Date cDate = f->getDate();
+            Date cDate = Date::now(); // Date changes because it is a new instance of a file
             uintmax_t cSize = f->getSize();
 
             unique_ptr<File> copy = make_unique<File>(cName, cDate, cSize);

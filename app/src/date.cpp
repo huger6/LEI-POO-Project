@@ -1,7 +1,10 @@
 #include "date.hpp"
+
 #include "utils.hpp"
 
+
 using namespace std;
+
 
 /**
  * @brief Construct a new Date:: Date object
@@ -54,6 +57,25 @@ Date Date::convertFileTime(const std::filesystem::file_time_type &ftime) {
         time.tm_mday,
         time.tm_mon + 1,
         time.tm_year + 1900
+    );
+}
+
+/**
+ * @brief Return current date
+ * 
+ * @return Date Today's date
+ */
+Date Date::now() {
+    using namespace std::chrono;
+
+    auto now = system_clock::now();
+    std::time_t t = system_clock::to_time_t(now);
+    std::tm *lt = std::localtime(&t);
+
+    return Date(
+        static_cast<std::uint16_t>(lt->tm_mday),
+        static_cast<std::uint16_t>(lt->tm_mon + 1),
+        static_cast<std::uint16_t>(lt->tm_year + 1900)
     );
 }
 

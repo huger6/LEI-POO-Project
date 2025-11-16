@@ -15,6 +15,7 @@ class File {
 
         // Setters
         void setName(const std::string &name);
+        void setDate(const Date &newDate);
         // Getters
         const Filename getName() const;
         Filename& getName();
