@@ -5,18 +5,24 @@
 #include <cstdint>
 
 #include "filename.hpp"
-
-using namespace std;
+#include "date.hpp"
 
 class File {
     public:
-        File(const string &filename);
-        File(const string &filename, const uintmax_t size);
+        File(const std::string &filename);
+        File(const std::string &filename, Date date, const std::uintmax_t size);
+        File(const std::string &filename, const std::string &date, const std::uintmax_t size);
 
+        // Setters
+        void setName(const std::string &name);
+        void setDate(const Date &newDate);
+        // Getters
+        const Filename getName() const;
+        Filename& getName();
+        std::uintmax_t getSize() const;
+        const Date getDate() const;
     private:
         Filename filename;
-        uintmax_t size;
-        string create_date;
-        string last_modified_date;
-        string absolute_path;
+        std::uintmax_t size;
+        Date date;
 };

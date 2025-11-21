@@ -3,16 +3,24 @@
 #include <iostream>
 #include <string>
 #include <cstdint>
+#include <filesystem>
 
 class Date {
     public:
-        Date(uint16_t day, uint16_t month, uint16_t year);
+        Date();
+        Date(std::uint16_t day, std::uint16_t month, std::uint16_t year);
+        Date(const std::string &date);
         ~Date();
 
+        static Date convertFileTime(const std::filesystem::file_time_type &ftime);
+        static Date now();
+
         std::string getFormattedDate() const;
-        uint16_t getDay() const;
-        uint16_t getMonth() const;
-        uint16_t getYear() const;
+        std::uint16_t getDay() const;
+        std::uint16_t getMonth() const;
+        std::uint16_t getYear() const;
     private:
-        uint16_t day, month, year;
+        std::uint16_t day, month, year;
+
+        void parse(const std::string &dateStr);
 };

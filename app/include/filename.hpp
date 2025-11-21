@@ -2,19 +2,24 @@
 
 #include <iostream>
 #include <string>
-
-using namespace std;
+#include <cstdint>
 
 class Filename {
     public:
-        Filename(const string &fullname);
-        Filename(const string &name, const string &extention);
+        Filename(const std::string &fullname);
+        Filename(const std::string &name, const std::string &extention);
 
-        string getFullname() const;
-    protected:
-        string name;
-        string extension;
+        void generateSequentialName(std::uint16_t counter);
+        // Setters
+        void setExtension(const std::string &newExtension);
+        void setName(const std::string &newName);
+        // Getters
+        std::string getFullname() const;
+        std::string getName() const;
+        std::string getExtension() const;
     private:
-        string getExtension(const string& fullname);
-        string getName(const string& fullname);
+        std::string name;
+        std::string extension;
+        std::string getExtension(const std::string& fullname);
+        std::string getName(const std::string& fullname);
 };
