@@ -18,7 +18,10 @@ namespace xml = tinyxml2;
  * @brief Construct a new File System:: File System object
  * 
  */
-FileSystem::FileSystem() = default;
+FileSystem::FileSystem() {
+    path = "";
+    root = nullptr;
+};
 
 /**
  * @brief Create a new filesystem with direct loading with feedback
@@ -30,14 +33,6 @@ FileSystem::FileSystem(const string &rootPath) : path(rootPath) {
         cout << "Loading was sucessful!" << endl;
     else 
         cout << "Loading Failed!" << endl;
-}
-
-/**
- * @brief Destroy the File System:: File System object
- * 
- */
-FileSystem::~FileSystem() {
-
 }
 
 /**
@@ -79,8 +74,13 @@ bool FileSystem::load(const string &rootPath) {
     return root->load(dirPath);
 }
 
+/**
+ * @brief Clear/Reset the filesystem
+ * 
+ */
 void FileSystem::clear() {
-    return;
+    path = "";
+    root = nullptr;
 }
 
 // Stats
@@ -277,10 +277,10 @@ bool FileSystem::moveFile(const string &file, const string &newFolder) {
     if (parent == dest) return false;
 
     // Get file
-    unique_ptr<File> f = parent->removeFile(file);
-    if (!f) return false;
+    unique_ptr<Element> el = parent->remove(file, ElementType::File);
+    if (!el) return false;
 
-    dest->addFile(move(f));
+    dest->add(move(el));
     return true;
 }
 
@@ -308,11 +308,11 @@ bool FileSystem::moveFolder(const string &oldDir, const string &newDir) {
     if (!oldParent) return false; // root must not be moved
 
     // Get oldF unique_ptr
-    unique_ptr<Folder> f = oldParent->removeFolder(oldDir);
-    if (!f) return false;
+    unique_ptr<Element> el = oldParent->remove(oldDir, ElementType::Folder);
+    if (!el) return false;
 
     // Add to newDir
-    newF->addFolder(move(f));
+    newF->add(move(el));
     return true;
 }
 
@@ -358,7 +358,7 @@ bool FileSystem::removeAll(const string &name, ElementType type) {
             if (!parent) break;
             
             // unique_ptr is destroyed automatically
-            unique_ptr<File> removed = parent->removeFile(name);
+            unique_ptr<Element> removed = parent->remove(name, ElementType::File);
             if (!removed) break;
             removedSomething = true;
         }
@@ -379,7 +379,7 @@ bool FileSystem::removeAll(const string &name, ElementType type) {
             }
             
             // unique_ptr is destroyed automatically
-            unique_ptr<Folder> removed = parent->removeFolder(name);
+            unique_ptr<Element> removed = parent->remove(name, ElementType::Folder);
             if (!removed) break;
             removedSomething = true;
         }

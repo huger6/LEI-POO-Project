@@ -12,22 +12,25 @@
 #include "tinyxml2.h"
 
 #include "file.hpp"
+#include "element.hpp"
 
 constexpr std::uint16_t SPACES_PER_LEVEL = 4;
 
 namespace fs = std::filesystem;
 namespace xml = tinyxml2;
 
-class Folder {
+/**
+ * @brief Handle all folder related operations
+ * 
+ */
+class Folder : public Element {
     public:
         Folder(std::string name, Folder *father);
 
         bool load(const fs::path& path);
 
-        void addFile(std::unique_ptr<File> file);
-        std::unique_ptr<File> removeFile(const std::string& name);
-        void addFolder(std::unique_ptr<Folder> folder);
-        std::unique_ptr<Folder> removeFolder(const std::string& name);
+        void add(std::unique_ptr<Element> element);
+        std::unique_ptr<Element> remove(const std::string& name, ElementType type);
 
         bool copyBatch(const std::string &pattern, Folder *destin);
         
@@ -59,12 +62,11 @@ class Folder {
         File *getFileByName(const std::string& name) const;
         Folder *getFolderByFileName(const std::string& name) const;
         Folder* getParent() const;
-        const std::string& getName() const;
-        const std::vector<std::unique_ptr<File>>& getFiles() const;
-        const std::vector<std::unique_ptr<Folder>>& getSubfolders() const;
+        const std::string getName() const;
+
+        bool isFile() const override { return false; }
+        bool isFolder() const override { return true; }
     private:
-        std::string name;
-        std::vector<std::unique_ptr<File>> files;
-        std::vector<std::unique_ptr<Folder>> subfolders;
+        std::vector<std::unique_ptr<Element>> elements;
         Folder *root;
 };

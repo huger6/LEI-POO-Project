@@ -102,5 +102,6 @@ string Filename::getExtension(const std::string& fullname) {
  */
 string Filename::getName(const string& fullname) {
     size_t pos = fullname.rfind('.');
-    return (pos != string::npos) ? fullname.substr(0, pos) : "";
+    return (pos != string::npos) ? fullname.substr(0, pos) : fullname;
 }
+

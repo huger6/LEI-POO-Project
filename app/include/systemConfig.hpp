@@ -8,8 +8,16 @@
 #endif
 #include <locale.h>
 
+/**
+ * @brief Configure system output
+ * 
+ */
 class SystemConfig {
     public:
+        /**
+         * @brief Set terminal with UTF8 charset
+         * 
+         */
         static void setUTF8() {
             #ifdef _WIN32
                 // SetConsoleOutputCP returns 0 if there's an error
@@ -23,3 +31,4 @@ class SystemConfig {
             #endif
         }
 };
+

@@ -5,6 +5,11 @@
 #include <cstdint>
 #include <filesystem>
 
+
+/**
+ * @brief Handle date operations and storage
+ * 
+ */
 class Date {
     public:
         Date();
@@ -24,3 +29,4 @@ class Date {
 
         void parse(const std::string &dateStr);
 };
+

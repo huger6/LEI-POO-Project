@@ -5,6 +5,14 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+include(FetchContent)
+
+FetchContent_Declare(ftxui
+    GIT_REPOSITORY https://github.com/ArthurSonzogni/FTXUI.git
+    GIT_TAG v6.1.9
+)
+FetchContent_MakeAvailable(ftxui)
+
 # .exe
 # Collect sources from the app directory
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
@@ -15,6 +23,14 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Includes
 target_include_directories(${PROJECT_NAME} PRIVATE app/include)
+
+# Link ftxui
+target_link_libraries(${PROJECT_NAME}
+    PRIVATE
+    ftxui::screen
+    ftxui::dom
+    ftxui::component    
+)
 
 # Set .exe
 set_target_properties(${PROJECT_NAME} PROPERTIES

@@ -30,8 +30,6 @@ Date::Date(const string &date) {
     parse(date);
 }
 
-Date::~Date() {}
-
 /**
  * @brief Converts a filesystem::file_time_type into a Date scrutured in day, month and year
  * 

@@ -8,26 +8,29 @@
 #include <optional>
 
 #include "folder.hpp"
+#include "element.hpp"
 
-enum class ElementType { Folder, File };
 
+/**
+ * @brief Handle a filesystem and its operations
+ * 
+ */
 class FileSystem {
     public:
         FileSystem();
         FileSystem(const std::string &rootPath);
-        ~FileSystem();
         
         bool load(); // 1
         bool load(const std::string &rootPath); // 1
 
-        void clear(); // Clear all data from memory
+        void clear();
         
         // Stats
         std::uint32_t countFiles() const; // 2
         std::uint32_t countFolders() const; // 3
         std::uintmax_t memory() const; // 4
         
-        std::string *mostElementsFolder() const; // 4
+        std::string *mostElementsFolder() const; // 5
         std::string *leastElementsFolder() const; // 6
         std::string *largestFile() const; // 7
         std::string *largestFolder() const; // 8
@@ -62,3 +65,4 @@ class FileSystem {
         std::unique_ptr<Folder> root;
         std::string path; // Path to the root directory
 };
+

@@ -13,7 +13,7 @@ using namespace std;
  * @param name Name of the folder
  * @param father Folder's parent folder
  */
-Folder::Folder(string name, Folder *father = nullptr) : name(name) {
+Folder::Folder(string name, Folder *father = nullptr) : Element(name) {
     root = father;
 }
 
@@ -35,13 +35,13 @@ bool Folder::load(const fs::path& path) {
             // Load subfolder's content
             if (subfolder->load(entry.path())) {
                 // Add folder to its father folders list
-                addFolder(move(subfolder));
+                add(move(subfolder));
             }
         }
         else if (entry.is_regular_file()) {
             Date date = Date::convertFileTime(fs::last_write_time(entry.path()));
 
-            addFile(make_unique<File>(
+            add(make_unique<File>(
                 entry.path().filename().string(),
                 date,
                 fs::file_size(entry.path())
@@ -53,75 +53,71 @@ bool Folder::load(const fs::path& path) {
 }
 
 /**
- * @brief Add a file to the folder
+ * @brief Add an element to this folder
  * 
- * @param file File to add
+ * @param element Element to be added
  */
-void Folder::addFile(unique_ptr<File> file) {
-    if (!file) return;
+void Folder::add(std::unique_ptr<Element> element) {
+    if (!element) return;
 
-    string name = file->getName().getFullname();
-
-    uint16_t counter = 1;
-
-    while (hasFile(name)) {
-        file->getName().generateSequentialName(counter);
-        counter++;
+    if (element->isFile()) {
+        File *f = dynamic_cast<File *>(element.get());
+        if (f) {
+            std::string fname = f->getName().getFullname();
+            std::uint16_t counter = 1;
+            while (hasFile(fname)) {
+                f->getName().generateSequentialName(counter);
+                fname = f->getName().getFullname();
+                counter++;
+            }
+        }
+        elements.push_back(move(element));
+        return;
     }
 
-    files.push_back(move(file));
+    if (element->isFolder()) {
+        Folder *sub = dynamic_cast<Folder *>(element.get());
+        if (sub) sub->setParent(this);
+        elements.push_back(move(element));
+        return;
+    }
+
+    // Fallback
+    elements.push_back(std::move(element));
 }
 
 /**
- * @brief Removes a file from the current folder and returns its unique_ptr
+ * @brief Remove an element and return its ownership
  * 
- * @param name Name of the file to remove
- * @return unique_ptr<File> File if found, else nullptr
+ * @param name Name of the element to be removed
+ * @param type Type of the element to be removed
+ * @return std::unique_ptr<Element> Ownership or nullptr if failure
  */
-unique_ptr<File> Folder::removeFile(const string& name) {
-    for (vector<unique_ptr<File>>::iterator it = files.begin(); it != files.end(); ++it) {
-        if ((*it)->getName().getFullname() == name) {
-            unique_ptr<File> file = move(*it);
-            files.erase(it);
-            return file;
+std::unique_ptr<Element> Folder::remove(const std::string& name, ElementType type) {
+    for (auto it = elements.begin(); it != elements.end(); ++it) {
+        if (type == ElementType::File && (*it)->isFile()) {
+            File *f = dynamic_cast<File*>((*it).get());
+            
+            if (f && f->getName().getFullname() == name) {
+                std::unique_ptr<Element> el = std::move(*it);
+                elements.erase(it);
+                return el;
+            }
+        }
+        else if (type == ElementType::Folder && (*it)->isFolder()) {
+            Folder *fo = dynamic_cast<Folder*>((*it).get());
+            if (fo && fo->getName() == name) {
+                std::unique_ptr<Element> el = std::move(*it);
+                elements.erase(it);
+                return el;
+            }
         }
     }
     return nullptr;
 }
 
 /**
- * @brief Removes a folder from the current folder (can be the folder itself) and returns its unique_ptr
- * 
- * @note This method is non recursive, as it only checks for direct children of the current folder
- * 
- * @param name Name of the folder to remove
- * @return unique_ptr<Folder> Folder if found, else nullptr
- */
-unique_ptr<Folder> Folder::removeFolder(const string& name) {
-    for (vector<unique_ptr<Folder>>::iterator it = subfolders.begin(); it != subfolders.end(); ++it) {
-        if ((*it)->getName() == name) {
-            unique_ptr<Folder> f = move(*it);
-            subfolders.erase(it);
-            return f;
-        }
-    }
-    return nullptr;
-}
-
-/**
- * @brief Add a subfolder to the folder
- * 
- * @param folder (sub)Folder to add
- */
-void Folder::addFolder(unique_ptr<Folder> folder) {
-    if (!folder) return;
-
-    folder->setParent(this);
-    subfolders.push_back(move(folder));
-}
-
-/**
- * @brief 
+ * @brief Copy a batch of files to another folder
  * 
  * @param pattern Pattern to find in the name of the file
  * @param destin Destination folder 
@@ -129,26 +125,33 @@ void Folder::addFolder(unique_ptr<Folder> folder) {
  * @return false No file matching the pattern was found or the copy of the files found was not successful
  */
 bool Folder::copyBatch(const string &pattern, Folder *destin) {
+    if (!destin) return false;
+
     bool copied = false;
-    // Search in this folder's files
-    for (const unique_ptr<File> &f : files) {
-        if (Utils::hasPattern(f->getName().getFullname(), pattern)) {
-            string cName = f->getName().getFullname();
-            Date cDate = Date::now(); // Date changes because it is a new instance of a file
-            uintmax_t cSize = f->getSize();
 
-            unique_ptr<File> copy = make_unique<File>(cName, cDate, cSize);
-            if (!copy) continue;
+    // Iterate over generic elements
+    for (const unique_ptr<Element> &el : elements) {
+        if (!el) continue;
 
-            destin->addFile(move(copy));
-            copied = true;
+        if (el->isFile()) {
+            File *f = dynamic_cast<File *>(el.get());
+            if (!f) continue;
+
+            if (Utils::hasPattern(f->getName().getFullname(), pattern)) {
+                string cName = f->getName().getFullname();
+                Date cDate = Date::now(); // update date
+                uintmax_t cSize = f->getSize();
+
+                unique_ptr<File> copy = make_unique<File>(cName, cDate, cSize);
+                destin->add(move(copy));
+                copied = true;
+            }
         }
-    }
-
-    // Check subfolders
-    for (const unique_ptr<Folder> &sub : subfolders) {
-        if (sub->copyBatch(pattern, destin)) {
-            copied = true;
+        else if (el->isFolder()) {
+            Folder *sub = dynamic_cast<Folder*>(el.get());
+            if (sub && sub->copyBatch(pattern, destin)) {
+                copied = true;
+            }
         }
     }
 
@@ -161,13 +164,25 @@ bool Folder::copyBatch(const string &pattern, Folder *destin) {
  * @return uint32_t Number of files
  */
 uint32_t Folder::countFiles() const {
-    uint32_t foldersFiles = static_cast<uint32_t>(files.size());
+    uint32_t count = 0;
 
-    // SubFolders Files
-    for (const unique_ptr<Folder>& sub : subfolders) {
-        foldersFiles += sub->countFiles();
+    for (const unique_ptr<Element> &el : elements) {
+        if (!el) continue;
+
+        if (el->isFile()) {
+            File *f = dynamic_cast<File *>(el.get());
+            if (!f) continue;
+
+            count++;
+        }
+        else if (el->isFolder()) {
+            Folder *sub = dynamic_cast<Folder *>(el.get());
+            if (sub) {
+                count += sub->countFiles();
+            }
+        }
     }
-    return foldersFiles;
+    return count;
 }
 
 /**
@@ -176,12 +191,20 @@ uint32_t Folder::countFiles() const {
  * @return uint32_t Number of folders
  */
 uint32_t Folder::countFolders() const {
-    uint32_t folders = static_cast<uint32_t>(subfolders.size());
-    // SubFolders subfolders
-    for (const unique_ptr<Folder>& sub : subfolders) {
-        folders += sub->countFolders();
+    uint32_t count = 0;
+
+    for (const unique_ptr<Element> &el : elements) {
+        if (!el) continue;
+
+        if (el->isFile()) continue;
+        else if (el->isFolder()) {
+            Folder *sub = dynamic_cast<Folder *>(el.get());
+            if (sub) {
+                count += sub->countFolders();
+            }
+        }
     }
-    return folders;
+    return count;
 }
 
 /**
@@ -193,20 +216,27 @@ uint32_t Folder::countFolders() const {
  */
 bool Folder::checkDupFiles(unordered_set<string>& names) {
     // Check this folder
-    for (const unique_ptr<File>& f : files) {
-        const string& name = f->getName().getFullname();
+    for (const unique_ptr<Element>& el : elements) {
+        // Files
+        if (el->isFile()) {
+            File *f = dynamic_cast<File *>(el.get());
+            if (!f) continue;
 
-        // Check if name exists in names
-        if (!names.insert(name).second) {
-            return true;
+            const string& name = f->getName().getFullname();
+    
+            // Check if name exists in names
+            if (!names.insert(name).second) {
+                return true;
+            }
+            // Note: names.insert(name) already inserts the name on the uset unless !.second (returns false if already existed)
         }
-        // Note: names.insert(name) already inserts the name on the uset unless !.second (returns false if already existed)
-    }
-
-    // Subfolders
-    for (const unique_ptr<Folder>& sub : subfolders) {
-        if (sub->checkDupFiles(names)) {
-            return true;
+        // Subfolders
+        else if (el->isFolder()) {
+            Folder *sub = dynamic_cast<Folder *>(el.get());
+            if (!sub) continue;
+            
+            if (sub->checkDupFiles(names)) 
+                return true;            
         }
     }
 
@@ -222,25 +252,38 @@ bool Folder::checkDupFiles(unordered_set<string>& names) {
  * @param mirror Output file mirror, if needed
  */
 void Folder::tree(const string &prefix, bool isLast, ostream &out, ostream *mirror) const {
-    // Connector and prefix
+    // Print this folder
     out << prefix << (isLast ? "└── " : "├── ") << getName() << endl;
     if (mirror) *mirror << prefix << (isLast ? "└── " : "├── ") << getName() << endl;
 
-    // Next level prefix
+    // Prepare prefix for children
     string newPrefix = prefix + (isLast ? "    " : "│   ");
 
-    // SubFolders
-    for (size_t i = 0; i < subfolders.size(); ++i) {
-        bool lastSub = (i == subfolders.size() - 1 && files.empty());
-        subfolders[i]->tree(newPrefix, lastSub, out, mirror);
-    }
+    // Iterate mixed elements vector
+    for (size_t i = 0; i < elements.size(); ++i) {
+        bool last = (i == elements.size() - 1);
+        const unique_ptr<Element> &el = elements[i];
+        if (!el) continue;
 
-    // Files
-    for (size_t i = 0; i < files.size(); ++i) {
-        bool lastFile = (i == files.size() - 1);
-        const auto &f = files[i];
-        out << newPrefix << (lastFile ? "└── " : "├── ") << f->getName().getFullname() << endl;
-        if (mirror) *mirror << newPrefix << (lastFile ? "└── " : "├── ") << f->getName().getFullname() << endl;
+        if (el->isFolder()) {
+            Folder *sub = dynamic_cast<Folder *>(el.get());
+            if (sub) {
+                // Recurse into subfolder
+                sub->tree(newPrefix, last, out, mirror);
+            }
+        }
+        else if (el->isFile()) {
+            File *f = dynamic_cast<File *>(el.get());
+            if (f) {
+                out << newPrefix << (last ? "└── " : "├── ") << f->getName().getFullname() << endl;
+                if (mirror) *mirror << newPrefix << (last ? "└── " : "├── ") << f->getName().getFullname() << endl;
+            }
+        }
+        else {
+            // Fallback for unknown Element types
+            out << newPrefix << (last ? "└── " : "├── ") << el->getName().getFullname() << endl;
+            if (mirror) *mirror << newPrefix << (last ? "└── " : "├── ") << el->getName().getFullname() << endl;
+        }
     }
 }
 
@@ -253,19 +296,26 @@ uintmax_t Folder::memory() const {
     uintmax_t mem = 0;
 
     // This folder's memory
-    mem += sizeof(Folder);
+    mem += sizeof(*this);
+    // Pointers
+    mem += elements.size() * sizeof(unique_ptr<Element>);
     
     // SubFolders
-    for (const unique_ptr<Folder>& sub : subfolders) {
-        mem += sub->memory();
-        mem += sizeof(unique_ptr<Folder>);
+    for (const unique_ptr<Element>& el : elements) {
+        if (!el) continue;
+
+        mem += sizeof(*el); // object's memory
+
+        if (el->isFile()) {
+            File *f = dynamic_cast<File *>(el.get());
+            if (f) mem += f->getSize();
+        }
+        else if (el->isFolder()) {
+            Folder *sub = dynamic_cast<Folder *>(el.get());
+            if (sub) mem += sub->memory();
+        }
     }
 
-    // Files
-    for (const unique_ptr<File>& f : files) {
-        mem += f->getSize();
-        mem += sizeof(unique_ptr<File>);
-    }
     return mem;
 }
 
@@ -276,11 +326,15 @@ uintmax_t Folder::memory() const {
  */
 const Folder *Folder::mostElementsFolder() const {
     const Folder *maxFolder = this;
-    size_t maxCount = files.size() + subfolders.size();
+    size_t maxCount = elements.size();
 
-    for (const unique_ptr<Folder>& sub : subfolders) {
-        const Folder *candidate = sub->mostElementsFolder();
-        size_t candidateCount = candidate->files.size() + candidate->subfolders.size();
+    for (const unique_ptr<Element>& el : elements) {
+        if (!el->isFolder()) continue;
+
+        const Folder *candidate = dynamic_cast<const Folder *>(el.get());
+        if (!candidate) continue;
+
+        size_t candidateCount = candidate->elements.size();
 
         if (candidateCount > maxCount) { // keeps the first
             maxCount = candidateCount;
@@ -297,11 +351,15 @@ const Folder *Folder::mostElementsFolder() const {
  */
 const Folder *Folder::leastElementsFolder() const {
     const Folder *minFolder = this;
-    size_t minCount = files.size() + subfolders.size();
+    size_t minCount = elements.size();
 
-    for (const unique_ptr<Folder>& sub : subfolders) {
-        const Folder *candidate = sub->leastElementsFolder();
-        size_t candidateCount = candidate->files.size() + candidate->subfolders.size();
+    for (const unique_ptr<Element>& el : elements) {
+        if (!el->isFolder()) continue;
+
+        const Folder *candidate = dynamic_cast<const Folder *>(el.get());
+        if (!candidate) continue;
+
+        size_t candidateCount = candidate->elements.size();
 
         if (candidateCount < minCount) { // keeps the first
             minCount = candidateCount;
@@ -320,18 +378,24 @@ const File *Folder::largestFile() const {
     const File *largest = nullptr;
     uintmax_t largestSize = 0;
 
-    for (const unique_ptr<File>& f : files) {
-        if (f->getSize() > largestSize) {
-            largestSize = f->getSize();
-            largest = f.get();
-        }
-    }
+    for (const unique_ptr<Element>& el : elements) {
+        if (el->isFile()) {
+            const File *candidate = dynamic_cast<File *>(el.get());
+            if (!candidate) continue;
 
-    for (const unique_ptr<Folder>& sub : subfolders) {
-        const File *candidate = sub->largestFile();
-        if (candidate && candidate->getSize() > largestSize) {
-            largestSize = candidate->getSize();
-            largest = candidate;
+            if (candidate->getSize() > largestSize) {
+                largestSize = candidate->getSize();
+                largest = candidate;
+            }
+        }
+        else if (el->isFolder()) {
+            const File *candidate = dynamic_cast<const Folder *>(el.get())->largestFile();
+            if (!candidate) continue;
+            
+            if (candidate->getSize() > largestSize) {
+                largestSize = candidate->getSize();
+                largest = candidate;
+            }
         }
     }
 
@@ -345,11 +409,16 @@ const File *Folder::largestFile() const {
  */
 const Folder *Folder::largestFolder() const {
     const Folder *largest = this;
-    uintmax_t largestSize = files.size() + subfolders.size();
+    uintmax_t largestSize = elements.size();
 
-    for (const unique_ptr<Folder>& sub : subfolders) {
+    for (const unique_ptr<Element>& el : elements) {
+        if (!el->isFolder()) continue;
+
+        const Folder *sub = dynamic_cast<const Folder *>(el.get());
+        if (!sub) continue;
+
         const Folder *candidate = sub->largestFolder();
-        uintmax_t candidateSize = candidate->files.size() + candidate->subfolders.size();
+        uintmax_t candidateSize = candidate->elements.size();
 
         if (candidateSize > largestSize) { // keeps the first
             largestSize = candidateSize;
@@ -370,22 +439,30 @@ const Folder *Folder::largestFolder() const {
 void Folder::saveToXML(xml::XMLDocument &doc, xml::XMLElement *parentElem) const {
     // Create element for this folder
     xml::XMLElement *dirElem = doc.NewElement("Folder");
-    dirElem->SetAttribute("name", name.c_str());
+    dirElem->SetAttribute("name", name.getName().c_str());
     parentElem->InsertEndChild(dirElem);
 
     // Write all files
-    for (const unique_ptr<File> &f : files) {
-        xml::XMLElement *fileElem = doc.NewElement("File");
-        fileElem->SetAttribute("name", f->getName().getFullname().c_str());
-        fileElem->SetAttribute("size", static_cast<unsigned long long>(f->getSize()));
-        fileElem->SetAttribute("date", f->getDate().getFormattedDate().c_str());
-        dirElem->InsertEndChild(fileElem);
+    for (const unique_ptr<Element> &el : elements) {
+        if (el->isFolder()) {
+            const Folder *sub = dynamic_cast<const Folder *>(el.get());
+            if (!sub) continue;
+
+            sub->saveToXML(doc, dirElem);
+        }
+        else if (el->isFile()) {
+            const File *f = dynamic_cast<const File *>(el.get());
+            if (!f) continue;
+
+            xml::XMLElement *fileElem = doc.NewElement("File");
+            fileElem->SetAttribute("name", f->getName().getFullname().c_str());
+            fileElem->SetAttribute("size", static_cast<unsigned long long>(f->getSize()));
+            fileElem->SetAttribute("date", f->getDate().getFormattedDate().c_str());
+            dirElem->InsertEndChild(fileElem);
+        }
     }
 
-    // Write all subfolders
-    for (const unique_ptr<Folder> &sub : subfolders) {
-        sub->saveToXML(doc, dirElem);
-    }
+    
 }
 
 /**
@@ -395,9 +472,8 @@ void Folder::saveToXML(xml::XMLDocument &doc, xml::XMLElement *parentElem) const
  */
 void Folder::readFromXML(xml::XMLElement *dirElem) {
     if (!dirElem) return;
-    // Clear existing data (optional but recommended)
-    files.clear();
-    subfolders.clear();
+    // Clear existing data
+    elements.clear();
 
     // Load all files
     for (xml::XMLElement *fileElem = dirElem->FirstChildElement("File"); fileElem != nullptr; fileElem = fileElem->NextSiblingElement("File")) {
@@ -410,7 +486,7 @@ void Folder::readFromXML(xml::XMLElement *dirElem) {
         const char* dateStr = fileElem->Attribute("date");
 
         // Create file
-        files.push_back(make_unique<File>(fname ? fname : "Unnamed", dateStr, size));
+        elements.push_back(make_unique<File>(fname ? fname : "Unnamed", dateStr, size));
     }
 
     // Load all subdirectories
@@ -419,7 +495,7 @@ void Folder::readFromXML(xml::XMLElement *dirElem) {
         // Create the folder with the provided name
         unique_ptr<Folder> subfolder = make_unique<Folder>(subName ? subName : "Unnamed", this);
         subfolder->readFromXML(subElem);
-        subfolders.push_back(move(subfolder));
+        elements.push_back(move(subfolder));
     }
 }
 
@@ -436,9 +512,14 @@ string Folder::searchFolder(const string& name) const {
     if (this->getName() == name) return this->getName() + "/";
 
     // Search subfolders recursively and return the first non-empty path
-    for (const unique_ptr<Folder>& sub : subfolders) {
-        string path = sub->searchFolder(name);
-        if (!path.empty()) return this->getName() + "/" + path;
+    for (const unique_ptr<Element>& el : elements) {
+        if (el->isFolder()) {
+            Folder *sub = dynamic_cast<Folder *>(el.get());
+            if (!sub) continue;
+
+            string path = sub->searchFolder(name);
+            if (!path.empty()) return this->getName() + "/" + path;
+        }
     }
 
     // Not found
@@ -462,27 +543,43 @@ void Folder::searchAllFolders(list<string> &li, const string& name, const string
     }
 
     // Search in all subfolders
-    for (const unique_ptr<Folder>& sub : subfolders) {
-        sub->searchAllFolders(li, name, currentPath);
+    for (const unique_ptr<Element>& el : elements) {
+        if (el->isFolder()) {
+            Folder *sub = dynamic_cast<Folder *>(el.get());
+            if (!sub) continue;
+
+            sub->searchAllFolders(li, name, currentPath);
+        }
     }
 }
 
 /**
  * @brief Get the path to the file whose name is 'name'
  * 
+ * @note Searches in this Folder first
+ * 
  * @param name Name of the file to search
  * @return string Path of the file found or "" if not found
  */
 string Folder::searchFile(const string& name) const {
     // Files
-    for (const unique_ptr<File>& f : files) {
-        if (f->getName().getFullname() == name) return this->getName() + "/" + f->getName().getFullname();
-    }
+    for (const unique_ptr<Element>& el : elements) {
+        if (el->isFile()) {
+            File *f = dynamic_cast<File *>(el.get());
+            if (!f) continue;
 
-    // Subfolders
-    for (const unique_ptr<Folder>& sub : subfolders) {
-        string path = sub->searchFile(name);
-        if (!path.empty()) return this->getName() + "/" + path;
+            if (f->getName().getFullname() == name) return this->getName() + "/" + f->getName().getFullname();
+        }
+    }
+    // Folders recursive
+    for (const unique_ptr<Element>& el : elements) {
+        if (el->isFolder()) {
+            Folder *sub = dynamic_cast<Folder *>(el.get());
+            if (!sub) continue;
+
+            string path = sub->searchFile(name);
+            if (!path.empty()) return this->getName() + "/" + path;
+        }
     }
 
     // Not found
@@ -501,15 +598,25 @@ void Folder::searchAllFiles(list<string> &li, const string& name, const string& 
     string currentPath = path.empty() ? getName() : path + "/" +  getName();
 
     // Check if this folder matches
-    for (const unique_ptr<File>& f : files) {
-        if (f->getName().getFullname() == name) {
-            li.push_back(currentPath + "/" + name);
+    for (const unique_ptr<Element>& el : elements) {
+        if (el->isFile()) {
+            const File *f = dynamic_cast<const File *>(el.get());
+            if (!f) continue;
+
+            if (f->getName().getFullname() == name) {
+                li.push_back(currentPath + "/" + name);
+            }
         }
     }
     
     // Search in all subfolders
-    for (const unique_ptr<Folder>& sub : subfolders) {
-        sub->searchAllFiles(li, name, currentPath);
+    for (const unique_ptr<Element>& el : elements) {
+        if (el->isFolder()) {
+            const Folder *sub = dynamic_cast<const Folder *>(el.get());
+            if (!sub) continue;
+
+            sub->searchAllFiles(li, name, currentPath);
+        }
     }
 }
 
@@ -522,8 +629,8 @@ void Folder::searchAllFiles(list<string> &li, const string& name, const string& 
  * @return false File does not exist
  */
 bool Folder::hasFile(const std::string &name) const {
-    for (const unique_ptr<File>& f : files) {
-        if (f->getName().getFullname() == name)
+    for (const unique_ptr<Element>& el : elements) {
+        if (el->isFile() && el->getName().getFullname() == name)
             return true;
     }
     return false;
@@ -553,9 +660,14 @@ Folder *Folder::getFolderByName(const string& name) const {
     if (this->getName() == name) return const_cast<Folder *>(this);
 
     // Search subfolders recursively and return the first non-empty path
-    for (const unique_ptr<Folder>& sub : subfolders) {
-        Folder *f = sub->getFolderByName(name);
-        if (f) return f;
+    for (const unique_ptr<Element>& el : elements) {
+        if (el->isFolder()) {
+            Folder *sub = dynamic_cast<Folder *>(el.get());
+            if (!sub) continue;
+
+            Folder *found = sub->getFolderByName(name);
+            if (found) return found;
+        }
     }
 
     // Not found
@@ -570,14 +682,24 @@ Folder *Folder::getFolderByName(const string& name) const {
  */
 File *Folder::getFileByName(const string& name) const {
     // Files
-    for (const unique_ptr<File>& f : files) {
-        if (f->getName().getFullname() == name) return f.get();
+    for (const unique_ptr<Element>& el : elements) {
+        if (el->isFile()) {
+            File *f = dynamic_cast<File *>(el.get());
+            if (!f) continue;
+
+            if (f->getName().getFullname() == name) return f;
+        }
     }
 
     // Subfolders
-    for (const unique_ptr<Folder>& sub : subfolders) {
-        File *f = sub->getFileByName(name);
-        if (f) return f;
+    for (const unique_ptr<Element>& el : elements) {
+        if (el->isFolder()) {
+            Folder *sub = dynamic_cast<Folder *>(el.get());
+            if (!sub) continue;
+
+            File *f = sub->getFileByName(name);
+            if (f) return f;
+        }
     }
 
     // Not found
@@ -592,14 +714,24 @@ File *Folder::getFileByName(const string& name) const {
  */
 Folder *Folder::getFolderByFileName(const string& name) const {
     // Files
-    for (const unique_ptr<File>& f : files) {
-        if (f->getName().getFullname() == name) return const_cast<Folder *>(this);
+    for (const unique_ptr<Element>& el : elements) {
+        if (el->isFile()) {
+            File *f = dynamic_cast<File *>(el.get());
+            if (!f) continue;
+
+            if (f->getName().getFullname() == name) return const_cast<Folder *>(this);
+        }
     }
 
     // Subfolders
-    for (const unique_ptr<Folder>& sub : subfolders) {
-        Folder *f = sub->getFolderByFileName(name);
-        if (f) return f;
+    for (const unique_ptr<Element>& el : elements) {
+        if (el->isFolder()) {
+            Folder *sub = dynamic_cast<Folder *>(el.get());
+            if (!sub) continue;
+
+            Folder *found = sub->getFolderByFileName(name);
+            if (found) return found;
+        }
     }
 
     // Not found
@@ -618,18 +750,5 @@ Folder* Folder::getParent() const { return root; }
  * 
  * @return const string& Name
  */
-const string& Folder::getName() const { return name; }
+const string Folder::getName() const { return name.getName(); }
 
-/**
- * @brief Get all files
- * 
- * @return const vector<unique_ptr<File>>& Files
- */
-const vector<unique_ptr<File>>& Folder::getFiles() const { return files; }
-
-/**
- * @brief Get all subfolders
- * 
- * @return const vector<unique_ptr<Folder>>& Subfolders
- */
-const vector<unique_ptr<Folder>>& Folder::getSubfolders() const { return subfolders; }

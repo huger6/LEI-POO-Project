@@ -4,6 +4,11 @@
 #include <string>
 #include <cstdint>
 
+
+/**
+ * @brief Handle a file/folder name
+ * 
+ */
 class Filename {
     public:
         Filename(const std::string &fullname);
@@ -23,3 +28,4 @@ class Filename {
         std::string getExtension(const std::string& fullname);
         std::string getName(const std::string& fullname);
 };
+
