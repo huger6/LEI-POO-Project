@@ -40,15 +40,15 @@ class FileSystem {
         bool readFromXML(const std::string &s); // 12
         
         // File operations
+        bool removeAll(const std::string &name, ElementType type); // 10
         bool moveFile(const std::string &file, const std::string &newDir); // 13
         bool moveFolder(const std::string &oldDir, const std::string &newDir); // 14
-        bool copyBatch(const std::string &pattern, const std::string &originDir, const std::string &destinDir); // 21
-        bool removeAll(const std::string &name, ElementType type); // 10
-        void renameAllFiles(const std::string &currentName, const std::string &newName); // 19
         std::string *getFileDate(const std::string &file); // 15
+        void renameAllFiles(const std::string &currentName, const std::string &newName); // 19
+        bool copyBatch(const std::string &pattern, const std::string &originDir, const std::string &destinDir); // 21
         
         // Search operations
-        std::optional<std::string> search(const std::string &name, ElementType type);
+        std::optional<std::string> search(const std::string &name, ElementType type); // 9
         void searchAllFolders(std::list<std::string> &li, const std::string &folder) const; // 17
         void searchAllFiles(std::list<std::string> &li, const std::string &file) const; // 18
 
