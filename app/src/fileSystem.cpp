@@ -79,8 +79,8 @@ bool FileSystem::load(const string &rootPath) {
  * 
  */
 void FileSystem::clear() {
+    root.reset();
     path = "";
-    root = nullptr;
 }
 
 // Stats
@@ -349,44 +349,13 @@ bool FileSystem::removeAll(const string &name, ElementType type) {
     if (name.empty()) return false;
     if (!root) return false;
 
-    bool removedSomething = false;
-
-    if (type == ElementType::File) {
-        while (true) {
-            // Find file's parent
-            Folder *parent = root->getFolderByFileName(name);
-            if (!parent) break;
-            
-            // unique_ptr is destroyed automatically
-            unique_ptr<Element> removed = parent->remove(name, ElementType::File);
-            if (!removed) break;
-            removedSomething = true;
-        }
-        return removedSomething;
-    }
-    else if (type == ElementType::Folder) {
-        while (true) {
-            // Find folder to be deleted
-            Folder *oldF = root->getFolderByName(name);
-            if (!oldF) break;
-    
-            Folder *parent = oldF->getParent();
-            // Check if the folder being removed is the root
-            if (!parent) {
-                clear(); // reset filesystem
-                removedSomething = true;
-                break;
-            }
-            
-            // unique_ptr is destroyed automatically
-            unique_ptr<Element> removed = parent->remove(name, ElementType::Folder);
-            if (!removed) break;
-            removedSomething = true;
-        }
-        return removedSomething;
+    // Special case: removing root folder
+    if (type == ElementType::Folder && root->getName() == name) {
+        clear();
+        return true;
     }
 
-    return false;
+    return root->removeAll(name, type);
 }
 
 /**
@@ -399,13 +368,7 @@ void FileSystem::renameAllFiles(const string &currentName, const string &newName
     if (currentName.empty() || newName.empty()) return;
     if (currentName == newName) return;
 
-    while (true) {
-        // Find file's parent
-        File *f = root->getFileByName(currentName);
-        if (!f) break;
-
-        f->setName(newName);
-    }
+    root->renameAllFiles(currentName, newName);
 }
 
 /**

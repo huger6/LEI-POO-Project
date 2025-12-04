@@ -17,6 +17,7 @@ The development follows a strict **object-oriented** architecture, with careful 
 -   **Build system:** CMake 4.1.1
 -   **External dependency:**
     -   [`tinyxml2`](https://github.com/leethomason/tinyxml2) (files included locally)
+    -   [`ftxui`](https://github.com/ArthurSonzogni/FTXUI) (files included in CMakeLists.txt)
 -   **Paradigm:** Object-Oriented Programming
 
 ------------------------------------------------------------------------
@@ -25,22 +26,27 @@ The development follows a strict **object-oriented** architecture, with careful 
 
     app/
      ├── include/
+     │    ├── app.hpp
      │    ├── date.hpp
+     │    ├── element.hpp
      │    ├── file.hpp
      │    ├── filename.hpp
      │    ├── fileSystem.hpp
      │    ├── folder.hpp
+     │    ├── input.hpp
      │    ├── menu.hpp
      │    ├── systemConfig.hpp
      │    ├── tinyxml2.h
      │    └── utils.hpp
-     │
      └── src/
+          ├── app.cpp
           ├── date.cpp
+          ├── element.cpp
           ├── file.cpp
           ├── filename.cpp
           ├── fileSystem.cpp
           ├── folder.cpp
+          ├── input.cpp
           ├── main.cpp
           ├── menu.cpp
           └── tinyxml2.cpp
@@ -97,7 +103,7 @@ The project uses **CMake** for portability and ease of use.
 ### 1️⃣ Generate build files
 
 ``` bash
-cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Debug
+cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
 ```
 
 ### 2️⃣ Compile
@@ -133,7 +139,62 @@ The project makes strong use of:
 -   Recursive directory traversal
 -   Operator and method overloading
 -   XML processing via `tinyxml2`
+-   Menus via `ftxui`
 -   Separation of logic (core classes) and interaction (Menu system)
+
+------------------------------------------------------------------------
+
+## 📚 Accessing the Documentation (Doxygen)
+
+This project includes a pre-configured **Doxygen** setup (via `Doxyfile`) to generate full API documentation.
+
+---
+
+### ✔️ Prerequisites
+
+Make sure you have **Doxygen** installed:
+
+- **Linux:**
+  ```bash
+  sudo apt install doxygen
+  ```
+
+- **MacOS:**
+  ```bash
+  brew install doxygen
+  ```
+
+- **Windows:**
+  Download the installer from the official website:
+  https://www.doxygen.nl/download.html
+
+---
+
+### 📄 Generating the Documentation
+
+To generate the documentation, run the following command in the root of the project:
+
+  doxygen Doxyfile
+
+After running the command, Doxygen will create the following directories:
+
+  docs/html/   → Contains the HTML documentation (open index.html in a browser)
+  docs/latex/  → Contains the LaTeX version (optional)
+
+### 🌐 Documentation
+
+To generate the documentation:
+
+1. Run
+  ```bash
+  doxygen Doxyfile
+  ```
+2. The documentation will be created in folder docs/
+
+3. Acess documentation through index.html in docs/html or refman.tex (latex) in docs/latex/
+
+An already generated PDF document is available (docs.pdf).
+
 
 ------------------------------------------------------------------------
 

@@ -15,7 +15,6 @@ class Date {
         Date();
         Date(std::uint16_t day, std::uint16_t month, std::uint16_t year);
         Date(const std::string &date);
-        ~Date();
 
         static Date convertFileTime(const std::filesystem::file_time_type &ftime);
         static Date now();

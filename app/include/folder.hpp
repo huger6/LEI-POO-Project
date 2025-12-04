@@ -54,6 +54,9 @@ class Folder : public Element {
         bool checkDupFiles(std::unordered_set<std::string>& names);
         void tree(const std::string &prefix, bool isLast, std::ostream &out, std::ostream *mirror) const;
 
+        bool removeAll(const std::string &name, ElementType type);
+        void renameAllFiles(const std::string &currentName, const std::string &newName);
+
         bool hasFile(const std::string &name) const;
         // Setters
         void setParent(Folder *parent);

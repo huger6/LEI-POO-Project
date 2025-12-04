@@ -200,7 +200,7 @@ uint32_t Folder::countFolders() const {
         else if (el->isFolder()) {
             Folder *sub = dynamic_cast<Folder *>(el.get());
             if (sub) {
-                count += sub->countFolders();
+                count += 1 + sub->countFolders();
             }
         }
     }
@@ -331,8 +331,10 @@ const Folder *Folder::mostElementsFolder() const {
     for (const unique_ptr<Element>& el : elements) {
         if (!el->isFolder()) continue;
 
-        const Folder *candidate = dynamic_cast<const Folder *>(el.get());
-        if (!candidate) continue;
+        const Folder *sub = dynamic_cast<const Folder *>(el.get());
+        if (!sub) continue;
+
+        const Folder *candidate = sub->mostElementsFolder();
 
         size_t candidateCount = candidate->elements.size();
 
@@ -356,12 +358,14 @@ const Folder *Folder::leastElementsFolder() const {
     for (const unique_ptr<Element>& el : elements) {
         if (!el->isFolder()) continue;
 
-        const Folder *candidate = dynamic_cast<const Folder *>(el.get());
-        if (!candidate) continue;
+        const Folder *sub = dynamic_cast<const Folder *>(el.get());
+        if (!sub) continue;
+
+        const Folder *candidate = sub->leastElementsFolder();
 
         size_t candidateCount = candidate->elements.size();
 
-        if (candidateCount < minCount) { // keeps the first
+        if (candidateCount < minCount) { // keep the first if equal
             minCount = candidateCount;
             minFolder = candidate;
         }
@@ -426,6 +430,76 @@ const Folder *Folder::largestFolder() const {
         }
     }
     return largest;
+}
+
+/**
+ * @brief Remove type element recursively
+ * 
+ * @param name Name to remove
+ * @param type Type of the element
+ * @return true Removed with success
+ * @return false Failed to remove or name and type don't exist
+ */
+bool Folder::removeAll(const std::string &name, ElementType type) {
+    bool removed = false;
+
+    for (auto it = elements.begin(); it != elements.end(); ) {
+        bool erased = false;
+
+        // Check if current element matches criteria for removal
+        if (type == ElementType::File && (*it)->isFile()) {
+            File *f = dynamic_cast<File*>((*it).get());
+            if (f && f->getName().getFullname() == name) {
+                it = elements.erase(it);
+                removed = true;
+                erased = true;
+            }
+        }
+        else if (type == ElementType::Folder && (*it)->isFolder()) {
+            Folder *fo = dynamic_cast<Folder*>((*it).get());
+            if (fo && fo->getName() == name) {
+                it = elements.erase(it);
+                removed = true;
+                erased = true;
+            }
+        }
+
+        // If not erased, check recursively if it is a folder
+        if (!erased) {
+            if ((*it)->isFolder()) {
+                Folder *sub = dynamic_cast<Folder*>((*it).get());
+                if (sub && sub->removeAll(name, type)) {
+                    removed = true;
+                }
+            }
+            ++it;
+        }
+    }
+
+    return removed;
+}
+
+/**
+ * @brief Rename all files recursively
+ * 
+ * @param currentName Current name to change
+ * @param newName New name to change to
+ */
+void Folder::renameAllFiles(const std::string &currentName, const std::string &newName) {
+    for (const unique_ptr<Element>& el : elements) {
+        if (el->isFile()) {
+            File *f = dynamic_cast<File*>(el.get());
+            if (f && f->getName().getFullname() == currentName) {
+                f->getName().setName(newName);
+            }
+        }
+        else if (el->isFolder()) {
+            Folder *sub = dynamic_cast<Folder*>(el.get());
+            if (sub) {
+                sub->renameAllFiles(currentName, newName);
+            }
+        }
+    }
 }
 
 // XML
