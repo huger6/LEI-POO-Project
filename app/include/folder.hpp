@@ -41,7 +41,7 @@ class Folder : public Element {
         const Folder *mostElementsFolder() const;
         const Folder *leastElementsFolder() const;
         const File *largestFile() const;
-        const Folder *largestFolder() const;
+        const Folder *largestFolder(bool isRoot) const;
 
         void saveToXML(xml::XMLDocument &doc, xml::XMLElement *parentElem) const;
         void readFromXML(xml::XMLElement *dirElem);

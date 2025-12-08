@@ -160,7 +160,7 @@ string *FileSystem::largestFile() const {
 string *FileSystem::largestFolder() const {
     if (!root) return nullptr;
 
-    const Folder *f = root->largestFolder();
+    const Folder *f = root->largestFolder(true);
     return new string(f->getName());
 }
 
@@ -265,6 +265,10 @@ bool FileSystem::readFromXML(const string &filename) {
  * @return false Failed to move the file
  */
 bool FileSystem::moveFile(const string &file, const string &newFolder) {
+    if (root == nullptr) {
+        std::cout << "Root directory is empty" << std::endl;
+        return false;
+    }
     // Find file's parent
     Folder *parent = root->getFolderByFileName(file);
     if (!parent) return false;
@@ -293,6 +297,10 @@ bool FileSystem::moveFile(const string &file, const string &newFolder) {
  * @return false Failure
  */
 bool FileSystem::moveFolder(const string &oldDir, const string &newDir) {
+    if (root == nullptr) {
+        std::cout << "Root directory is empty" << std::endl;
+        return false;
+    }
     // Find folder to be moved
     Folder *oldF = root->getFolderByName(oldDir);
     if (!oldF) return false;
@@ -326,6 +334,10 @@ bool FileSystem::moveFolder(const string &oldDir, const string &newDir) {
  * @return false 
  */
 bool FileSystem::copyBatch(const string &pattern, const string &originDir, const string &destinDir) {
+    if (root == nullptr) {
+        std::cout << "Root directory is empty" << std::endl;
+        return false;
+    }
     // Find origin folder
     Folder *origin = root->getFolderByName(originDir);
     if (!origin) return false;
@@ -347,7 +359,10 @@ bool FileSystem::copyBatch(const string &pattern, const string &originDir, const
  */
 bool FileSystem::removeAll(const string &name, ElementType type) {
     if (name.empty()) return false;
-    if (!root) return false;
+    if (root == nullptr) {
+        std::cout << "Root directory is empty" << std::endl;
+        return false;
+    }
 
     // Special case: removing root folder
     if (type == ElementType::Folder && root->getName() == name) {
@@ -365,6 +380,10 @@ bool FileSystem::removeAll(const string &name, ElementType type) {
  * @param newName New name WITHOUT EXTENSION
  */
 void FileSystem::renameAllFiles(const string &currentName, const string &newName) {
+    if (root == nullptr) {
+        std::cout << "Root directory is empty" << std::endl;
+        return;
+    }
     if (currentName.empty() || newName.empty()) return;
     if (currentName == newName) return;
 
@@ -399,6 +418,11 @@ string *FileSystem::getFileDate(const string &name) {
  * @return optional<string> Absolute path to the type element
  */
 optional<string> FileSystem::search(const string &name, ElementType type) {
+    if (root == nullptr) {
+        std::cout << "Root directory is empty" << std::endl;
+        return nullopt;
+    }
+
     if (name.empty() || !root) {
         return nullopt;
     }
@@ -427,6 +451,10 @@ optional<string> FileSystem::search(const string &name, ElementType type) {
  * @param folder Name of the folder to search for
  */
 void FileSystem::searchAllFolders(list<string> &li, const string &folder) const {
+    if (root == nullptr) {
+        std::cout << "Root directory is empty" << std::endl;
+        return;
+    }
     if (folder.empty()) return;
 
     root->searchAllFolders(li, folder, path);
@@ -439,6 +467,10 @@ void FileSystem::searchAllFolders(list<string> &li, const string &folder) const 
  * @param folder Name of the file to search for
  */
 void FileSystem::searchAllFiles(list<string> &li, const string &file) const {
+    if (root == nullptr) {
+        std::cout << "Root directory is empty" << std::endl;
+        return;
+    }
     if (file.empty()) return;
 
     root->searchAllFiles(li, file, path);
@@ -453,6 +485,11 @@ void FileSystem::searchAllFiles(list<string> &li, const string &file) const {
  * @return false There's no duplicate files
  */
 bool FileSystem::checkDupFiles() {
+    if (root == nullptr) {
+        std::cout << "Root directory is empty" << std::endl;
+        return false;
+    }
+
     unordered_set<string> names;
     return root->checkDupFiles(names);
 }
@@ -464,6 +501,11 @@ bool FileSystem::checkDupFiles() {
  * @param mirror Use to show to multiple interfaces concurrently
  */
 void FileSystem::tree(ostream &out, ostream *mirror) {
+    if (root == nullptr) {
+        std::cout << "Root directory is empty" << std::endl;
+        return;
+    }
+
     root->tree("", true, out, mirror);
 }
 

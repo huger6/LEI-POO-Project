@@ -411,9 +411,10 @@ const File *Folder::largestFile() const {
  * 
  * @return const Folder* Largest folder
  */
-const Folder *Folder::largestFolder() const {
-    const Folder *largest = this;
-    uintmax_t largestSize = elements.size();
+const Folder *Folder::largestFolder(bool isRoot = false) const {
+    const Folder *largest = isRoot ? nullptr : this;
+    
+    uintmax_t largestSize = (largest != nullptr) ? elements.size() : 0;
 
     for (const unique_ptr<Element>& el : elements) {
         if (!el->isFolder()) continue;
@@ -421,12 +422,15 @@ const Folder *Folder::largestFolder() const {
         const Folder *sub = dynamic_cast<const Folder *>(el.get());
         if (!sub) continue;
 
-        const Folder *candidate = sub->largestFolder();
-        uintmax_t candidateSize = candidate->elements.size();
+        const Folder *candidate = sub->largestFolder(false);
 
-        if (candidateSize > largestSize) { // keeps the first
-            largestSize = candidateSize;
-            largest = candidate;
+        if (candidate != nullptr) {
+            uintmax_t candidateSize = candidate->elements.size();
+
+            if (largest == nullptr || candidateSize > largestSize) {
+                largestSize = candidateSize;
+                largest = candidate;
+            }
         }
     }
     return largest;

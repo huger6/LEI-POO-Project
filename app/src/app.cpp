@@ -403,8 +403,8 @@ void App::advanced() {
                 break;
             }
             case 2: {
-                std::string oldName = Input::getString("Name of the files to replace: ");
-                std::string newName = Input::getString("New name: ");
+                std::string oldName = Input::getString("Name of the files to replace (with extension): ");
+                std::string newName = Input::getString("New name (no extension): ");
 
                 fs.renameAllFiles(oldName, newName);
 
