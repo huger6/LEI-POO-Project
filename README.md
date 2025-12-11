@@ -13,7 +13,7 @@ The development follows a strict **object-oriented** architecture, with careful 
 -   **Compiler:**
     -   *gcc.exe (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r4) 15.1.0*
     -   Fully tested on **Windows**
-    -   Linux compatibility still pending
+    -   Tested on Linux Ubuntu 24.04.03
 -   **Build system:** CMake 4.1.1
 -   **External dependency:**
     -   [`tinyxml2`](https://github.com/leethomason/tinyxml2) (files included locally)
