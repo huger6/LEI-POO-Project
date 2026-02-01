@@ -5,6 +5,8 @@ This project was developed for the **Object-Oriented Programming** curricular un
 The goal is to implement, in modern C++, an in-memory **file system manager**, supporting directory navigation, file manipulation, XML import/export, recursive operations, and several analytical features.
 The development follows a strict **object-oriented** architecture, with careful memory management and modular design.
 
+## Grade: 19
+
 ------------------------------------------------------------------------
 
 ## 🧰 Technologies & Tools
